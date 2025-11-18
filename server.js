@@ -1,37 +1,51 @@
-require('dotenv').config();
-const express = require('express');
-const fetch = require('node-fetch');
-const cors = require('cors');
+const express = require("express");
+const axios = require("axios");
+const cors = require("cors");
 
 const app = express();
+const PORT = process.env.PORT || 3000;
+
 app.use(cors());
 app.use(express.json());
 
-const PORT = process.env.PORT || 10000;
+// 🔹 Endpoint 1 — Obtener información de un gamepass específico
+app.get("/gamepass/:id", async (req, res) => {
+    const id = req.params.id;
+    const url = `https://economy.roblox.com/v2/developer-products/${id}`;
 
-// Endpoint: obtener detalles del gamepass
-app.get('/gamepass/:id', async (req, res) => {
-  const id = req.params.id;
+    try {
+        const response = await axios.get(url, {
+            headers: { "User-Agent": "Mozilla/5.0" }
+        });
 
-  if (!/^\d+$/.test(id)) {
-    return res.status(400).json({ success: false, error: "ID inválido" });
-  }
-
-  try {
-    const robloxUrl = `https://economy.roblox.com/v2/assets/${id}/details`;
-    const response = await fetch(robloxUrl);
-    const data = await response.json();
-
-    res.json({ success: true, data });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.toString() });
-  }
+        res.json({ success: true, data: response.data });
+    } catch (err) {
+        res.json({ success: false, error: err.message });
+    }
 });
 
-app.get('/', (req, res) => {
-  res.send('Roblox Proxy funcionando. Usa /gamepass/ID');
+// 🔹 Endpoint 2 — Obtener TODOS los gamepasses creados por un usuario (como PLS DONATE)
+app.get("/gamepasses/user/:userId", async (req, res) => {
+    const userId = req.params.userId;
+    const url = `https://catalog.roblox.com/v1/search/items?category=GamePass&creatorTargetId=${userId}&limit=30`;
+
+    try {
+        const response = await axios.get(url, {
+            headers: { "User-Agent": "Mozilla/5.0" }
+        });
+
+        res.json({ success: true, data: response.data });
+    } catch (err) {
+        res.json({ success: false, error: err.message });
+    }
 });
 
+// 🔹 Página principal
+app.get("/", (req, res) => {
+    res.send("Roblox Proxy API is running ✔");
+});
+
+// 🔹 Iniciar servidor
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en puerto ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
